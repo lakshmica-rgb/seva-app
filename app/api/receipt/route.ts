@@ -21,14 +21,14 @@ export async function POST(req: Request) {
 
   // 🛕 Title
   doc.setFontSize(16)
-  doc.setFont(undefined, 'bold')
+  doc.setFont('helvetica', 'bold')
   doc.text("Purva Panorama Temple Donation Receipt", 105, y, { align: "center" })
 
   y += 8
 
   // Trust Name
   doc.setFontSize(11)
-  doc.setFont(undefined, 'normal')
+  doc.setFont('helvetica', 'normal')
   doc.text("Siddhi Vinayaka Prasanna Anjeneya Temple Trust", 105, y, { align: "center" })
 
   y += 6
@@ -54,10 +54,10 @@ export async function POST(req: Request) {
 
   // Received line
   y += 10
-  doc.setFont(undefined, 'italic')
+  doc.setFont('helvetica', 'italic')
   doc.text("Received with thanks", 10, y)
 
-  doc.setFont(undefined, 'normal')
+  doc.setFont('helvetica', 'normal')
 
   // Details
   y += 10
@@ -76,9 +76,9 @@ export async function POST(req: Request) {
   y += 10
 
   // Amount (highlighted)
-  doc.setFont(undefined, 'bold')
+  doc.setFont('helvetica', 'bold')
   doc.text(`Amount Rupees ${data.amount} only`, 10, y)
-  doc.setFont(undefined, 'normal')
+  doc.setFont('helvetica', 'normal')
 
   y += 8
   doc.text(`Payment Mode: ${data.payment_mode || '-'}`, 10, y)
