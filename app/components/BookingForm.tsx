@@ -119,9 +119,10 @@ const [form, setForm] = useState<any>(emptyForm)
     return
     }
 
-    if (form.date < today) {
-      alert("Cannot book seva for past dates")
-      return
+    // ❌ Allow past date only in EDIT mode
+    if (!initialData?.id && form.date < today) {
+    alert("Cannot book seva for past dates")
+    return
     }
 
     if (form.phone && !isValidPhone(form.phone)) {
@@ -131,7 +132,7 @@ const [form, setForm] = useState<any>(emptyForm)
 
     setLoading(true)
 
-    if (EXCLUSIVE_SEVAS.includes(form.seva_name)) {
+    if (!initialData?.id && EXCLUSIVE_SEVAS.includes(form.seva_name)) {
       if (bookedDates.includes(form.date)) {
         alert("❌ This seva is already booked for this date")
         setLoading(false)
