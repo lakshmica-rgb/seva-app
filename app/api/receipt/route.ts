@@ -141,7 +141,7 @@ export async function POST(req: Request) {
   // doc.setFont('helvetica', 'italic')
   // doc.text(`(Rupees ${amountWords} Only)`, 10, y)
   
-  doc.text(`Amount Rupees ${amountWords} Only`, 10, y)
+  doc.text(`Amount: Rupees ${amountWords} Only /-`, 10, y)
 
   doc.setFont('helvetica', 'normal')
 
