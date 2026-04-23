@@ -137,10 +137,13 @@ const [userName, setUserName] = useState('')
     return { total, byDate, bySeva }
   }, [bookings, selectedMonth])
 
-  const sevaChartData = Object.entries(monthlyData.bySeva).map(([name, value]) => ({
-    name,
-    value
-  }))
+  const COLORS = ['#6366F1', '#22C55E', '#F59E0B', '#EF4444', '#06B6D4']
+
+const sevaChartData = Object.entries(monthlyData.bySeva).map(([name, value], index) => ({
+  name,
+  value,
+  fill: COLORS[index % COLORS.length]
+}))
 
   const dateChartData = Object.entries(monthlyData.byDate).map(([date, value]) => ({
     date,
@@ -421,7 +424,15 @@ const downloadReceipt = async (b: any) => {
                     <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="value" />
+                    <Bar dataKey="value" isAnimationActive radius={[6,6,0,0]}>
+                      {sevaChartData.map((entry, index) => (
+                        <rect
+                          key={index}
+                          fill={entry.fill}
+                        />
+                      ))}
+                    </Bar>
+                      
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -432,7 +443,14 @@ const downloadReceipt = async (b: any) => {
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="value" />
+                      <Bar dataKey="value" isAnimationActive radius={[6,6,0,0]}>
+                      {sevaChartData.map((entry, index) => (
+                        <rect
+                          key={index}
+                          fill={entry.fill}
+                        />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
