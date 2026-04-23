@@ -13,7 +13,8 @@ const SEVAS = [
   "Hanuman Abhishekam",
   "Hanuman Vastra",
   "Hanuman Butter Alankara",
-  "Vada Mala"
+  "Vada Mala",
+  "General Seva"
 ]
 
 const PRICE_MAP: any = {
@@ -113,6 +114,11 @@ const [form, setForm] = useState<any>(emptyForm)
       return
     }
 
+    if (form.seva_name === "General Seva" && (!form.amount || form.amount <= 0)) {
+    alert("Please enter valid amount")
+    return
+    }
+
     if (form.date < today) {
       alert("Cannot book seva for past dates")
       return
@@ -133,7 +139,10 @@ const [form, setForm] = useState<any>(emptyForm)
       }
     }
 
-    const amount = PRICE_MAP[form.seva_name]
+    const amount =
+        form.seva_name === "General Seva"
+            ? Number(form.amount || 0)
+            : PRICE_MAP[form.seva_name]
 
     let error
 
@@ -327,11 +336,19 @@ Thank you`
         onChange={e => setForm({ ...form, notes: e.target.value })}
       />
 
-      {form.seva_name && (
-        <div className="text-sm font-medium">
-          Amount: Rs. {PRICE_MAP[form.seva_name]}
-        </div>
-      )}
+            {form.seva_name === "General Seva" ? (
+                <input
+                    type="number"
+                    placeholder="Enter Amount"
+                    className="w-full p-2 border rounded"
+                    value={form.amount || ''}
+                    onChange={e => setForm({ ...form, amount: Number(e.target.value) })}
+                />
+                ) : form.seva_name ? (
+                <div className="text-sm font-medium">
+                    Amount: Rs. {PRICE_MAP[form.seva_name]}
+                </div>
+        ) : null}
 
       <button
         className="w-full bg-green-600 text-white p-2 rounded"
