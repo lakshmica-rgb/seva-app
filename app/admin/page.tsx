@@ -41,11 +41,18 @@ export default function AdminPage() {
 
   const router = useRouter()
   const today = getToday()
+const [userName, setUserName] = useState('')
 
   useEffect(() => {
     const init = async () => {
       const { data } = await supabase.auth.getUser()
       const user = data.user
+
+      if (user) {
+        setUserName(user.user_metadata?.name || user.email || 'User')
+       }
+
+      
 
       if (!user) {
         router.push('/login')
@@ -232,7 +239,7 @@ const downloadReceipt = async (b: any) => {
                 🛕 Temple Dashboard
               </div>
               <div className="text-sm text-gray-500">
-                Role: {role}
+                Welcome, {userName}
               </div>
             </div>
 
