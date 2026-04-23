@@ -13,7 +13,6 @@ const SEVAS = [
   "Hanuman Abhishekam",
   "Hanuman Vastra",
   "Hanuman Butter Alankara",
-  "Vada Mala",
   "General Seva"
 ]
 
@@ -26,8 +25,7 @@ const PRICE_MAP: any = {
   "Hanuman Archana": 51,
   "Hanuman Abhishekam": 1000,
   "Hanuman Vastra": 1000,
-  "Hanuman Butter Alankara": 501,
-  "Vada Mala": 401
+  "Hanuman Butter Alankara": 501
 }
 
 const EXCLUSIVE_SEVAS = [
