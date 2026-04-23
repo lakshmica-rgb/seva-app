@@ -273,7 +273,7 @@ const downloadReceipt = async (b: any) => {
             {Object.entries(monthlyData.bySeva).map(([s, amt]) => (
               <div key={s} className="flex justify-between text-sm bg-gray-50 p-2 rounded mb-1">
                 <span>{s}</span>
-                <span>₹ {amt}</span>
+                <span>₹ {Number(amt)}</span>
               </div>
             ))}
           </div>
