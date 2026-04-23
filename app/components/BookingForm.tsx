@@ -48,6 +48,7 @@ const emptyForm = {
   payment_mode: '',
   notes: '',
   sankalpa_details: '',
+  payment_reference: '',
   amount: ''
 }
 
@@ -156,6 +157,7 @@ const [form, setForm] = useState<any>(emptyForm)
           phone: form.phone || '',
           house_number: form.house_number || '',
           payment_mode: form.payment_mode || '',
+          payment_reference: form.payment_reference || '',
           sankalpa_details: form.sankalpa_details || '',
           notes: form.notes || '',
           amount
@@ -176,6 +178,7 @@ const [form, setForm] = useState<any>(emptyForm)
             phone: form.phone || '',
             house_number: form.house_number || '',
             payment_mode: form.payment_mode || '',
+            payment_reference: form.payment_reference || '',
             sankalpa_details: form.sankalpa_details || '',
             notes: form.notes || '',
             amount,
@@ -316,6 +319,13 @@ Thank you`
         <option value="Cash">Cash</option>
         <option value="UPI">UPI</option>
       </select>
+
+        <input
+        placeholder="Payment Reference (Txn ID / UPI Ref)"
+        className="w-full p-2 border rounded"
+        value={form.payment_reference || ''}
+        onChange={e => setForm({ ...form, payment_reference: e.target.value })}
+        />
 
         {/* Sankalpa Details */}
         <textarea

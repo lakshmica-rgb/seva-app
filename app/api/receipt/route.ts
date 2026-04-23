@@ -148,6 +148,9 @@ export async function POST(req: Request) {
   y += 10
   doc.text(`Payment Mode: ${data.payment_mode || '-'}`, 10, y)
 
+ y += 10
+ doc.text(`Payment Ref: ${data.payment_reference || '-'}`, 10, y)
+
   // 🖊️ Signature
   y += 25
   doc.text("Signed on behalf of", 10, y)
