@@ -443,7 +443,7 @@ const downloadReceipt = async (b: any) => {
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
-                      <Bar dataKey="value" isAnimationActive radius={[6,6,0,0]}>
+                      <Bar dataKey="value"  fill="#22C55E"  isAnimationActive radius={[6,6,0,0]}>
                       {sevaChartData.map((entry, index) => (
                         <rect
                           key={index}
