@@ -133,12 +133,15 @@ export async function POST(req: Request) {
   y += 10
 
   // 💰 Amount (Number + Words)
-  doc.setFont('helvetica', 'bold')
-  doc.text(`Amount: ₹ ${amount}`, 10, y)
+  
+  // doc.setFont('helvetica', 'bold')
+  // doc.text(`Amount: ₹ ${amount}`, 10, y)
 
-  y += 8
-  doc.setFont('helvetica', 'italic')
-  doc.text(`(Rupees ${amountWords} Only)`, 10, y)
+  // y += 8
+  // doc.setFont('helvetica', 'italic')
+  // doc.text(`(Rupees ${amountWords} Only)`, 10, y)
+  
+  doc.text(`Amount Rupees ${amountWords} Only`, 10, y)
 
   doc.setFont('helvetica', 'normal')
 
