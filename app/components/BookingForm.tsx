@@ -41,13 +41,14 @@ export default function BookingForm({ initialData, onSuccess }: any) {
 
 const emptyForm = {
   date: '',
-  seva_name: '',
+  seva_name: 'General Seva',
   devotee_name: '',
   phone: '',
   house_number: '',
   payment_mode: '',
   notes: '',
-  sankalpa_details: ''
+  sankalpa_details: '',
+  amount: ''
 }
 
 const [form, setForm] = useState<any>(emptyForm)
