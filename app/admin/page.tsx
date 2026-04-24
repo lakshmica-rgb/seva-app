@@ -43,6 +43,60 @@ export default function AdminPage() {
   const today = getToday()
 const [userName, setUserName] = useState('')
 
+
+
+const downloadCSV = () => {
+  if (!bookings.length) {
+    alert("No data to download")
+    return
+  }
+
+  const headers = [
+    "Date",
+    "Seva",
+    "Devotee Name",
+    "Phone",
+    "House Number",
+    "Payment Mode",
+    "Payment Reference",
+    "Amount",
+    "Status",
+    "Notes",
+    "Sankalpa Details"
+  ]
+
+  const rows = bookings.map(b => [
+    b.date,
+    b.seva_name,
+    b.devotee_name || '',
+    b.phone || '',
+    b.house_number || '',
+    b.payment_mode || '',
+    b.payment_reference || '',
+    b.amount || 0,
+    b.status || '',
+    b.notes || '',
+    b.sankalpa_details || ''
+  ])
+
+  const csvContent =
+    [headers, ...rows]
+      .map(row => row.map(val => `"${val}"`).join(','))
+      .join('\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `seva_bookings_${new Date().toISOString().slice(0, 10)}.csv`
+
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+
   useEffect(() => {
     const init = async () => {
       const { data } = await supabase.auth.getUser()
@@ -305,6 +359,15 @@ const downloadReceipt = async (b: any) => {
                   {f}
                 </button>
               ))}
+
+            <button
+              onClick={downloadCSV}
+              className="bg-green-600 text-white px-4 py-2 rounded-xl"
+            >
+              ⬇️ CSV
+            </button>
+
+
             </div>
 
 {loading ? (
