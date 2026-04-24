@@ -264,7 +264,7 @@ Thank you`
         type="date"
         className="w-full p-2 border rounded"
         value={form.date || ''}
-        min={today}
+        min={initialData?.id ? '' : today}
         onChange={e => setForm({ ...form, date: e.target.value })}
       />
 
