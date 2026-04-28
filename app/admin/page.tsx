@@ -8,7 +8,7 @@ import {
 } from 'recharts'
 
 import BookingForm from '../components/BookingForm'
-
+import ChatBot from '../components/ChatBot'
 
 const getToday = () => {
   const d = new Date()
@@ -24,6 +24,9 @@ const formatDate = (dateStr: string) => {
     month: 'short'
   })
 }
+
+
+
 
 export default function AdminPage() {
   const [bookings, setBookings] = useState<any[]>([])
@@ -43,7 +46,7 @@ export default function AdminPage() {
   const today = getToday()
 const [userName, setUserName] = useState('')
 
-
+const [showChat, setShowChat] = useState(false)
 
 const downloadCSV = () => {
   if (!bookings.length) {
@@ -310,6 +313,11 @@ const downloadReceipt = async (b: any) => {
                 ➕ Booking
               </button>
 
+              <button onClick={() => setShowChat(true)} className="bg-purple-500 text-white px-4 py-2 rounded-xl">
+                💬 Ask Ganesha
+              </button>
+
+
               <button
                 onClick={handleLogout}
                 className="bg-red-500 text-white px-4 py-2 rounded-xl"
@@ -466,7 +474,6 @@ const downloadReceipt = async (b: any) => {
         {/* REVENUE */}
         {activeTab === 'revenue' && (
           <div className="space-y-4">
-
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-green-500 text-white p-3 rounded">
                 Today ₹ {bookings.reduce((s, b) => s + (b.amount || 0), 0)}
@@ -555,6 +562,11 @@ const downloadReceipt = async (b: any) => {
       
     </div>
   </div>
+)}
+
+
+{showChat && (
+  <ChatBot onClose={() => setShowChat(false)} />
 )}
 
     </div>
