@@ -14,7 +14,13 @@ export default function ChatBot({ onClose }: any) {
   "repeat donors",
   "upi vs cash collection",
   "bookings this month",
-  "who donated more than 5000"
+  "who donated more than 5000",
+  "Next month revenue",
+  "Next 3 months revenue",
+  "Recurring monthly base",
+  "Which donors will expire next month?",
+  "Who has not renewed?",
+  "Top recurring donors"
 ]
 
   const renderResponse = () => {
@@ -22,7 +28,20 @@ export default function ChatBot({ onClose }: any) {
 
   const a = response.answer
 
-  
+  if (response.type === "donor_list") {
+  return (
+    <div>
+      <div className="font-semibold mb-2">{response.title}</div>
+      <ul className="list-disc ml-5 text-sm">
+        {response.items.map((item: any, i: number) => (
+          <li key={i}>
+            {item.name} (₹ {item.amount}/month)
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
 
   // KPI
   if (a.type === "kpi") {

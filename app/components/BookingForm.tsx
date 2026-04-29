@@ -49,7 +49,13 @@ const emptyForm = {
   notes: '',
   sankalpa_details: '',
   payment_reference: '',
-  amount: ''
+  amount: '',
+  // 🆕 NEW FIELDS
+  donation_type: 'one_time',
+  donation_start_date: '',
+  donation_end_date: '',
+  monthly_amount: '',
+  next_reminder_date: ''
 }
 
 const [form, setForm] = useState<any>(emptyForm)
@@ -130,6 +136,13 @@ const [form, setForm] = useState<any>(emptyForm)
       return
     }
 
+      if (form.donation_type === 'recurring') {
+        if (!form.donation_start_date || !form.donation_end_date) {
+          alert("Please select start and end dates")
+          return
+        }
+      }
+
     setLoading(true)
 
     if (!initialData?.id && EXCLUSIVE_SEVAS.includes(form.seva_name)) {
@@ -161,7 +174,14 @@ const [form, setForm] = useState<any>(emptyForm)
           payment_reference: form.payment_reference || '',
           sankalpa_details: form.sankalpa_details || '',
           notes: form.notes || '',
-          amount
+          amount,
+          donation_type: form.donation_type,
+          donation_start_date: form.donation_start_date || null,
+          donation_end_date: form.donation_end_date || null,
+          monthly_amount: form.monthly_amount || null,
+          next_reminder_date: form.next_reminder_date || null
+
+
         })
         .eq('id', initialData.id)
 
@@ -183,7 +203,12 @@ const [form, setForm] = useState<any>(emptyForm)
             sankalpa_details: form.sankalpa_details || '',
             notes: form.notes || '',
             amount,
-            status: 'Pending'
+            status: 'Pending',
+            donation_type: form.donation_type,
+            donation_start_date: form.donation_start_date || null,
+            donation_end_date: form.donation_end_date || null,
+            monthly_amount: form.monthly_amount || null,
+            next_reminder_date: form.next_reminder_date || null
           }
         ])
 
@@ -257,6 +282,34 @@ Thank you`
     if (onSuccess) onSuccess()
   }
 
+// new code for recurring amt calculation
+const calculateMonthly = (start: string, end: string, total: number) => {
+  if (!start || !end || !total) return ''
+
+  const s = new Date(start)
+  const e = new Date(end)
+
+  const months =
+    (e.getFullYear() - s.getFullYear()) * 12 +
+    (e.getMonth() - s.getMonth()) + 1
+
+  if (months <= 0) return ''
+
+  return Math.round(total / months)
+}
+// new code for recurring amt calculation
+
+const getNextReminderDate = (endDate: string) => {
+  if (!endDate) return ''
+
+  const d = new Date(endDate)
+
+  // Move to next month
+  const next = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+
+  return next.toISOString().split('T')[0]
+}
+
   return (
     <div className="space-y-3 text-black">
 
@@ -287,6 +340,121 @@ Thank you`
               <li key={i}>❌ {d}</li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {form.seva_name === 'General Seva' && (
+        <select
+          className="w-full p-2 border rounded"
+          value={form.donation_type}
+          onChange={e =>
+            setForm({ ...form, donation_type: e.target.value })
+          }
+        >
+          <option value="one_time">One-time</option>
+          <option value="recurring">Recurring</option>
+        </select>
+      )}
+
+      {form.seva_name === 'General Seva' &&
+      form.donation_type === 'recurring' && (
+        <div className="space-y-3">
+
+          {/* Start Date */}
+          <div>
+            <label className="text-sm font-medium text-gray-600">
+              Recurring Donation Start Date
+            </label>
+            <input
+              type="date"
+              className="w-full p-2 border rounded"
+              value={form.donation_start_date || ''}
+              onChange={e => {
+                const start = e.target.value
+                const monthly = calculateMonthly(
+                  start,
+                  form.donation_end_date,
+                  form.amount
+                )
+
+                setForm({
+                  ...form,
+                  donation_start_date: start,
+                  monthly_amount: monthly
+                })
+              }}
+            />
+          </div>
+
+          {/* End Date */}
+          <div>
+            <label className="text-sm font-medium text-gray-600">
+              Recurring Donation End Date
+            </label>
+            <input
+              type="date"
+              className="w-full p-2 border rounded"
+              value={form.donation_end_date || ''}
+              onChange={e => {
+                const end = e.target.value
+
+                // ⚠️ VALIDATION
+                if (form.donation_start_date && end < form.donation_start_date) {
+                  alert("End date cannot be before start date")
+                  return
+                }
+
+                const monthly = calculateMonthly(
+                  form.donation_start_date,
+                  end,
+                  form.amount
+                )
+
+                // 🆕 AUTO REMINDER
+                const reminder = getNextReminderDate(end)
+
+                setForm({
+                  ...form,
+                  donation_end_date: end,
+                  monthly_amount: monthly,
+                  next_reminder_date: reminder
+                })
+              }}
+
+            />
+          </div>
+
+          {/* Monthly Amount */}
+          <div>
+            <label className="text-sm font-medium text-gray-600">
+              Monthly Contribution (Auto Calculated)
+            </label>
+            <input
+              disabled
+              className="w-full p-2 border rounded bg-gray-100"
+              value={form.monthly_amount || ''}
+              placeholder="Monthly Amount"
+            />
+          </div>
+
+          {/* Next Reminder */}
+          <div>
+            <label className="text-sm font-medium text-gray-600">
+              Next Donation Reminder Date
+            </label>
+            <input
+              type="date"
+              className="w-full p-2 border rounded"
+              value={form.next_reminder_date || ''}
+              onChange={e =>
+                setForm({
+                  ...form,
+                  next_reminder_date: e.target.value
+                })
+              }
+            />
+          </div>
+
         </div>
       )}
 
@@ -352,7 +520,27 @@ Thank you`
                     placeholder="Enter Amount"
                     className="w-full p-2 border rounded"
                     value={form.amount || ''}
-                    onChange={e => setForm({ ...form, amount: Number(e.target.value) })}
+                    onChange={e => {
+                      const value = Number(e.target.value)
+
+                      let monthly = form.monthly_amount
+
+                      if (form.donation_type === 'recurring') {
+                        monthly = calculateMonthly(
+                          form.donation_start_date,
+                          form.donation_end_date,
+                          value
+                        )
+                      }
+
+                      setForm({
+                        ...form,
+                        amount: value,
+                        monthly_amount: monthly
+                      })
+                    }}
+
+//                    onChange={e => setForm({ ...form, amount: Number(e.target.value) })}
                 />
                 ) : form.seva_name ? (
                 <div className="text-sm font-medium">

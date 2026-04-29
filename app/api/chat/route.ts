@@ -47,6 +47,13 @@ Supported intents:
 - high_value_donors
 - repeat_donors
 - top_devotees_month
+// 🔮 NEW
+- next_month_projection
+- next_3_months_projection
+- recurring_base
+- donors_expiring_next_month
+- donors_not_renewed
+- top_recurring_donors
 
 Examples:
 User: "show Lakshmi history"
@@ -73,6 +80,42 @@ No explanation.
 //  console.log("AI CONTENT:", completion.choices[0].message.content)
 
 // const sql = completion.choices[0]?.message?.content?.trim()
+
+const getProjectedRevenue = (data: any[], monthsAhead: number) => {
+  const now = new Date()
+
+  let total = 0
+
+  for (let i = 1; i <= monthsAhead; i++) {
+    const target = new Date(now.getFullYear(), now.getMonth() + i, 1)
+
+    const value = data.reduce((sum, b) => {
+      if (
+        b.donation_type === 'recurring' &&
+        b.donation_start_date &&
+        b.donation_end_date &&
+        b.monthly_amount
+      ) {
+        const start = new Date(b.donation_start_date)
+        const end = new Date(b.donation_end_date)
+
+        const startMonth = new Date(start.getFullYear(), start.getMonth(), 1)
+        const endMonth = new Date(end.getFullYear(), end.getMonth(), 1)
+
+        if (target >= startMonth && target <= endMonth) {
+          return sum + (Number(b.monthly_amount) || 0)
+        }
+      }
+
+      return sum
+    }, 0)
+
+    total += value
+  }
+
+  return total
+}
+
 
 const raw = completion.choices[0]?.message?.content || ''
 
@@ -366,6 +409,139 @@ else if (intentObj.intent === "top_devotees_month") {
   result = sorted.map(([n, a], i) =>
     `${i + 1}. ${n} - ₹ ${a}`
   ).join('\n')
+}
+
+else if (intentObj.intent === "next_month_projection") {
+  const { data } = await supabase
+    .from('seva_bookings')
+    .select('*')
+
+  const total = getProjectedRevenue(data || [], 1)
+
+  result = {
+    type: "kpi",
+    title: "Next Month Expected Revenue",
+    value: total
+  }
+}
+
+else if (intentObj.intent === "next_3_months_projection") {
+  const { data } = await supabase
+    .from('seva_bookings')
+    .select('*')
+
+  const total = getProjectedRevenue(data || [], 3)
+
+  result = {
+    type: "kpi",
+    title: "Next 3 Months Expected Revenue",
+    value: total
+  }
+}
+
+else if (intentObj.intent === "recurring_base") {
+  const { data } = await supabase
+    .from('seva_bookings')
+    .select('*')
+
+  const total = (data || []).reduce((sum, b) => {
+    if (b.donation_type === 'recurring') {
+      return sum + (Number(b.monthly_amount) || 0)
+    }
+    return sum
+  }, 0)
+
+  result = {
+    type: "kpi",
+    title: "Recurring Monthly Base",
+    value: total
+  }
+}
+
+else if (intentObj.intent === "donors_expiring_next_month") {
+
+  const { data } = await supabase
+    .from('seva_bookings')
+    .select('*')
+
+  const now = new Date()
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+
+  const expiring = (data || []).filter(b => {
+    if (b.donation_type !== 'recurring' || !b.donation_end_date) return false
+
+    const end = new Date(b.donation_end_date)
+
+    return (
+      end.getMonth() === nextMonth.getMonth() &&
+      end.getFullYear() === nextMonth.getFullYear()
+    )
+  })
+
+  const names = expiring.map(b => b.devotee_name || 'Unknown')
+
+  result = {
+    type: "list",
+    title: "Donors Expiring Next Month",
+    items: names
+  }
+}
+
+else if (intentObj.intent === "donors_not_renewed") {
+
+  const { data } = await supabase
+    .from('seva_bookings')
+    .select('*')
+
+  const now = new Date()
+
+  const expired = (data || []).filter(b => {
+    if (b.donation_type !== 'recurring' || !b.donation_end_date) return false
+
+    const end = new Date(b.donation_end_date)
+
+    return end < now
+  })
+
+  const names = expired.map(b => b.devotee_name || 'Unknown')
+
+  result = {
+    type: "list",
+    title: "Donors Not Renewed",
+    items: names
+  }
+}
+
+else if (intentObj.intent === "top_recurring_donors") {
+
+  const { data } = await supabase
+    .from('seva_bookings')
+    .select('*')
+
+  const map: any = {}
+
+  ;(data || []).forEach(b => {
+    if (b.donation_type === 'recurring') {
+      const name = b.devotee_name || 'Unknown'
+      map[name] = (map[name] || 0) + (Number(b.monthly_amount) || 0)
+    }
+  })
+
+  const sorted = Object.entries(map)
+    .sort((a: any, b: any) => b[1] - a[1])
+    .slice(0, 5)
+
+//  const items = sorted.map(([name, value]) => `${name} (₹ ${value}/month)`)
+    const items = sorted.map(([name, value]) => ({
+      name,
+      amount: value
+    }))
+
+  result = {
+    type: "list",
+    title: "Top Recurring Donors",
+    items
+  }
 }
 
 else 

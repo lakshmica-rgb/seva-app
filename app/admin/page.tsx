@@ -25,6 +25,19 @@ const formatDate = (dateStr: string) => {
   })
 }
 
+const isSameMonth = (dateStr: string, target: Date) => {
+  const d = new Date(dateStr)
+  return (
+    d.getMonth() === target.getMonth() &&
+    d.getFullYear() === target.getFullYear()
+  )
+}
+
+const isWithinRange = (date: Date, start: string, end: string) => {
+  const s = new Date(start)
+  const e = new Date(end)
+  return date >= s && date <= e
+}
 
 
 
@@ -47,6 +60,49 @@ export default function AdminPage() {
 const [userName, setUserName] = useState('')
 
 const [showChat, setShowChat] = useState(false)
+
+
+// adding new function for calculation
+const getRevenue = (bookings: any[], type: 'total' | 'today') => {
+  const now = new Date()
+
+  return bookings.reduce((sum, b) => {
+
+     const d = new Date(b.date)
+
+    // 🟢 ONE-TIME
+    if (b.donation_type !== 'recurring') {
+
+      if (type === 'today') {
+        if (d.toDateString() === now.toDateString()) {
+          return sum + (b.amount || 0)
+        }
+        return sum
+      }
+
+      if (type === 'total') {
+        return sum + (b.amount || 0)
+      }
+    }
+
+    // 🔵 RECURRING
+    if (b.donation_type === 'recurring') {
+
+      // TODAY → ignore recurring
+      if (type === 'today') {
+        return sum
+      }
+
+      // TOTAL → full donation amount
+      if (type === 'total') {
+        return sum + (b.amount || 0)
+      }
+    }
+
+    return sum
+  }, 0)
+}
+   
 
 const downloadCSV = () => {
   if (!bookings.length) {
@@ -174,27 +230,182 @@ const downloadCSV = () => {
     setGrouped(groupedData)
   }, [filtered])
 
-  const monthlyData = useMemo(() => {
-    const monthData = bookings.filter(b =>
-      b.date?.startsWith(selectedMonth)
-    )
+  const getMonthlyRevenue = (bookings: any[], monthIndex: number, year: number) => {
+//  const targetDate = new Date(year, monthIndex, 1)
+  const targetMonth = new Date(year, monthIndex, 1)
 
-    let total = 0
-    const byDate: any = {}
-    const bySeva: any = {}
+  return bookings.reduce((sum, b) => {
 
-    monthData.forEach((b: any) => {
-      const amt = Number(b.amount || 0)
-      total += amt
+    // 🟢 ONE-TIME
+    if (b.donation_type !== 'recurring') {
+      const d = new Date(b.date)
 
-      byDate[b.date] = (byDate[b.date] || 0) + amt
-      bySeva[b.seva_name] = (bySeva[b.seva_name] || 0) + amt
+      if (
+        d.getMonth() === monthIndex &&
+        d.getFullYear() === year
+      ) {
+        return sum + (b.amount || 0)
+      }
+
+      return sum
+    }
+
+    // 🔵 RECURRING
+    if (
+      b.donation_start_date &&
+      b.donation_end_date &&
+      b.monthly_amount
+    ) {
+      const start = new Date(b.donation_start_date)
+      const end = new Date(b.donation_end_date)
+      const startMonth = new Date(start.getFullYear(), start.getMonth(), 1)
+      const endMonth = new Date(end.getFullYear(), end.getMonth(), 1)
+
+//      if (targetDate >= start && targetDate <= end) {
+        if (targetMonth >= startMonth && targetMonth <= endMonth) {
+        return sum + (Number(b.monthly_amount) || 0)
+      }
+    }
+
+    return sum
+  }, 0)
+}
+
+const buildMonthlyData = (bookings: any[], selectedMonth: string) => {
+  const bySeva: any = {}
+  const byDate: any = {}
+  let total = 0
+
+//  const [year, month] = selectedMonth.split('-').map(Number)
+
+const parts = selectedMonth.split('-')
+const year = Number(parts[0])
+const month = Number(parts[1])
+
+if (!year || !month) {
+  return { bySeva: {}, byDate: {}, total: 0 }
+}
+
+  bookings.forEach((b) => {
+
+    // 🟢 ONE-TIME
+    if (b.donation_type !== 'recurring') {
+      const d = new Date(b.date)
+
+      if (
+        d.getFullYear() === year &&
+        d.getMonth() + 1 === month
+      ) {
+        const seva = b.seva_name || 'Unknown'
+        const amount = b.amount || 0
+
+        bySeva[seva] = (bySeva[seva] || 0) + amount
+        byDate[b.date] = (byDate[b.date] || 0) + amount
+        total += amount
+      }
+
+      return
+    }
+
+    // 🔵 RECURRING
+    if (
+      b.donation_start_date &&
+      b.donation_end_date &&
+      b.monthly_amount
+    ) {
+      const start = new Date(b.donation_start_date)
+      const end = new Date(b.donation_end_date)
+
+//      const current = new Date(year, month - 1, 1)
+//      if (current >= start && current <= end) 
+
+// Normalize to month level
+        const startMonth = new Date(start.getFullYear(), start.getMonth(), 1)
+        const endMonth = new Date(end.getFullYear(), end.getMonth(), 1)
+        const currentMonth = new Date(year, month - 1, 1)
+
+        if (currentMonth >= startMonth && currentMonth <= endMonth)
+        {
+        const seva = b.seva_name || 'General Seva'
+        const amount = Number(b.monthly_amount) || 0
+
+        bySeva[seva] = (bySeva[seva] || 0) + amount
+
+//       const key = currentMonth.toISOString().split('T')[0]
+         const key = `${year}-${String(month).padStart(2, '0')}-01`
+        byDate[key] = (byDate[key] || 0) + amount
+
+        total += amount
+      }
+    }
+  })
+
+  return { bySeva, byDate, total }
+}
+
+// Project revenue block
+const getProjectedRevenue = (bookings: any[], monthsAhead: number) => {
+  const now = new Date()
+
+  const projections = []
+
+  for (let i = 1; i <= monthsAhead; i++) {
+    const target = new Date(now.getFullYear(), now.getMonth() + i, 1)
+
+    const value = bookings.reduce((sum, b) => {
+
+      // 🔵 ONLY RECURRING matters for projection
+      if (
+        b.donation_type === 'recurring' &&
+        b.donation_start_date &&
+        b.donation_end_date &&
+        b.monthly_amount
+      ) {
+        const start = new Date(b.donation_start_date)
+        const end = new Date(b.donation_end_date)
+
+        const startMonth = new Date(start.getFullYear(), start.getMonth(), 1)
+        const endMonth = new Date(end.getFullYear(), end.getMonth(), 1)
+
+        if (target >= startMonth && target <= endMonth) {
+          return sum + (Number(b.monthly_amount) || 0)
+        }
+      }
+
+      return sum
+    }, 0)
+
+    projections.push({
+      month: target.toLocaleString('default', { month: 'short' }),
+      value
     })
+  }
 
-    return { total, byDate, bySeva }
-  }, [bookings, selectedMonth])
+  return projections
+}
+
+
 
   const COLORS = ['#6366F1', '#22C55E', '#F59E0B', '#EF4444', '#06B6D4']
+
+const monthlyData = useMemo(() => {
+  return buildMonthlyData(bookings, selectedMonth)
+}, [bookings, selectedMonth])
+
+const projectionData = useMemo(() => {
+  return getProjectedRevenue(bookings, 6)
+}, [bookings])
+
+const nextMonthRevenue = projectionData[0]?.value || 0
+
+const next3MonthsRevenue = projectionData
+  .slice(0, 3)
+  .reduce((s, m) => s + m.value, 0)
+
+const activeRecurring = bookings
+  .filter(b => b.donation_type === 'recurring')
+  .reduce((s, b) => s + (Number(b.monthly_amount) || 0), 0)
+
 
 const sevaChartData = Object.entries(monthlyData.bySeva).map(([name, value], index) => ({
   name,
@@ -476,15 +687,29 @@ const downloadReceipt = async (b: any) => {
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-green-500 text-white p-3 rounded">
-                Today ₹ {bookings.reduce((s, b) => s + (b.amount || 0), 0)}
+                Today ₹ {getRevenue(bookings, 'today')}
               </div>
               <div className="bg-blue-500 text-white p-3 rounded">
                 Month ₹ {monthlyData.total}
               </div>
               <div className="bg-purple-500 text-white p-3 rounded">
-                Total ₹ {bookings.reduce((s, b) => s + (b.amount || 0), 0)}
+                Total ₹ {getRevenue(bookings, 'total')}
               </div>
             </div>
+
+            {/* 🔮 PROJECTION KPIs */}
+            <div className="grid grid-cols-3 gap-3"> 
+              <div className="bg-indigo-500 text-white p-3 rounded">
+                Projection<br></br> Next Month ₹ {nextMonthRevenue}
+              </div>
+              <div className="bg-orange-500 text-white p-3 rounded">
+                Projection<br></br>Next 3 Months ₹ {next3MonthsRevenue}
+              </div>
+              <div className="bg-teal-500 text-white p-3 rounded">
+                Projection<br></br>Recurring Base ₹ {activeRecurring}
+              </div>
+            </div>
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -524,6 +749,21 @@ const downloadReceipt = async (b: any) => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+
+              <div className="bg-white p-4 rounded shadow">
+                <div className="font-semibold mb-2">📈 Future Revenue Projection</div>
+
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={projectionData}>
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#6366F1" radius={[6,6,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+
 
             </div>
 
