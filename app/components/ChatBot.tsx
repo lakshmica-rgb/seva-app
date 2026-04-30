@@ -23,19 +23,73 @@ export default function ChatBot({ onClose }: any) {
   "Top recurring donors"
 ]
 
-  const renderResponse = () => {
-  if (!response?.answer) return null
+ const renderResponse = () => {
 
-  const a = response.answer
+  console.log("FINAL RESPONSE:", response)
+  console.log("RESPONSE TYPE:", response.type)
 
-  if (response.type === "donor_list") {
+  if (!response) return null
+
+  if (response.error) {
+    return (
+      <div className="text-red-500 text-sm">
+        ❌ {response.error}
+      </div>
+    )
+  }
+
+  if (typeof response === "string") {
+  return (
+    <div className="text-sm text-gray-700 whitespace-pre-line">
+      {response}
+    </div>
+  )
+}
+
+  // ✅ KPI
+  if (response.type === "kpi") {
+    return (
+      <div className="text-center">
+        <div className="text-sm text-gray-500">{response.title}</div>
+        <div className="text-xl font-bold text-green-600">
+          ₹ {response.value}
+        </div>
+      </div>
+    )
+  }
+
+  // text
+  if (response.type === "text") {
+  return (
+    <div className="text-sm text-gray-700">
+      {response.message}
+    </div>
+  )
+}
+
+// count type
+
+if (response.type === "count") {
+  return (
+    <div className="text-center">
+      <div className="text-sm text-gray-500">{response.title}</div>
+      <div className="text-xl font-bold text-indigo-600">
+        {response.value}
+      </div>
+    </div>
+  )
+}
+
+  // ✅ BREAKDOWN (KEEP YOUR EXISTING LOGIC)
+  if (response.type === "breakdown") {
   return (
     <div>
       <div className="font-semibold mb-2">{response.title}</div>
-      <ul className="list-disc ml-5 text-sm">
-        {response.items.map((item: any, i: number) => (
+      <ul className="list-decimal ml-5 text-sm">
+        {(response.items || []).map((item: any, i: number) => (
           <li key={i}>
-            {item.name} (₹ {item.amount}/month)
+            {(item.name || item.payment_mode || "Unknown")} 
+            {" (₹ "}{item.amount ?? item.value ?? 0}{")"}
           </li>
         ))}
       </ul>
@@ -43,68 +97,45 @@ export default function ChatBot({ onClose }: any) {
   )
 }
 
-  // KPI
-  if (a.type === "kpi") {
-    return (
-      <div className="bg-green-50 p-4 rounded-xl text-center">
-        <div className="text-sm text-gray-500">{a.title}</div>
-        <div className="text-2xl font-bold text-green-700">
-          ₹ {a.value}
-        </div>
-      </div>
-    )
-  }
-
-  // LIST
-  if (a.type === "list") {
-    return (
-      <div>
-        <div className="font-semibold mb-2">{a.title}</div>
-        <div className="space-y-2">
-          {a.items.map((item: any) => (
-            <div
-              key={item.rank}
-              className="flex justify-between bg-gray-50 p-2 rounded"
-            >
-              <div>
-                {item.rank}. {item.name}
-              </div>
-              <div className="text-green-600 font-medium">
-                  {item.amount
-                      ? `₹ ${item.amount}`
-                      : `${item.count} times`}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  // BREAKDOWN
-  if (a.type === "breakdown") {
-    return (
-      <div>
-        <div className="font-semibold mb-2">{a.title}</div>
-        {a.items.map((item: any, i: number) => (
-          <div
-            key={i}
-            className="flex justify-between bg-gray-50 p-2 rounded mb-1"
-          >
-            <span>{item.label}</span>
-            <span className="text-blue-600">₹ {item.value}</span>
-          </div>
+  // ✅ DONOR LIST (NEW)
+  if (response.type === "donor_list") {
+  return (
+    <div>
+      <div className="font-semibold mb-2">{response.title}</div>
+      <ul className="list-disc ml-5 text-sm">
+        {(response.items || []).map((item: any, i: number) => (
+          <li key={i}>
+            {item?.name || "Unknown"} (₹ {item?.amount ?? 0}/month)
+          </li>
         ))}
-      </div>
-    )
-  }
-
-
-
-
-  return <div>{JSON.stringify(a)}</div>
+      </ul>
+    </div>
+  )
 }
 
+  // ✅ SIMPLE LIST (NEW)
+  if (response.type === "list") {
+  return (
+    <div>
+      <div className="font-semibold mb-2">{response.title}</div>
+      <ul className="list-disc ml-5 text-sm">
+        {(response.items || []).map((item: any, i: number) => (
+          <li key={i}>
+            {typeof item === "string" ? item : item?.name || "Unknown"}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+  // ⚠️ FALLBACK (for debugging)
+  return (
+    <div className="text-xs text-red-500">
+      ⚠️ Unable to render response
+    </div>
+  )
+}
 
   const askQuestion = async () => {
     if (!question) return
@@ -121,7 +152,7 @@ export default function ChatBot({ onClose }: any) {
     const text = await res.text()
     const data = text ? JSON.parse(text) : { error: "Empty response" }
 
-    setResponse(data)
+    setResponse(data.answer || data)
     } catch (err) {
     console.error(err)
     setResponse({ error: "Failed to parse response" })

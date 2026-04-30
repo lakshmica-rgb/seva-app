@@ -61,6 +61,31 @@ const [userName, setUserName] = useState('')
 
 const [showChat, setShowChat] = useState(false)
 
+const getRecurringBase = (bookings: any[]) => {
+  const now = new Date()
+  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  return bookings.reduce((sum, b) => {
+    if (
+      b.donation_type === 'recurring' &&
+      b.donation_start_date &&
+      b.donation_end_date &&
+      b.monthly_amount
+    ) {
+      const start = new Date(b.donation_start_date)
+      const end = new Date(b.donation_end_date)
+
+      const startMonth = new Date(start.getFullYear(), start.getMonth(), 1)
+      const endMonth = new Date(end.getFullYear(), end.getMonth(), 1)
+
+      if (currentMonth >= startMonth && currentMonth <= endMonth) {
+        return sum + (Number(b.monthly_amount) || 0)
+      }
+    }
+
+    return sum
+  }, 0)
+}
 
 // adding new function for calculation
 const getRevenue = (bookings: any[], type: 'total' | 'today') => {
@@ -402,9 +427,7 @@ const next3MonthsRevenue = projectionData
   .slice(0, 3)
   .reduce((s, m) => s + m.value, 0)
 
-const activeRecurring = bookings
-  .filter(b => b.donation_type === 'recurring')
-  .reduce((s, b) => s + (Number(b.monthly_amount) || 0), 0)
+const activeRecurring = getRecurringBase(bookings)
 
 
 const sevaChartData = Object.entries(monthlyData.bySeva).map(([name, value], index) => ({

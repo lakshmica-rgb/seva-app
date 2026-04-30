@@ -54,6 +54,7 @@ Supported intents:
 - donors_expiring_next_month
 - donors_not_renewed
 - top_recurring_donors
+- upi_vs_cash
 
 Examples:
 User: "show Lakshmi history"
@@ -381,6 +382,30 @@ else if (intentObj.intent === "repeat_donors") {
   }
 }
 
+else if (intentObj.intent === "upi_vs_cash") {
+  const { data } = await supabase
+    .from('seva_bookings')
+    .select('payment_mode, amount')
+
+  const map: any = {}
+
+  ;(data || []).forEach(b => {
+    const mode = b.payment_mode || "Unknown"
+    map[mode] = (map[mode] || 0) + (Number(b.amount) || 0)
+  })
+
+  const items = Object.entries(map).map(([name, value]) => ({
+    name,
+    value
+  }))
+
+  result = {
+    type: "breakdown",
+    title: "UPI vs Cash Collection",
+    items
+  }
+}
+
 else if (intentObj.intent === "top_devotees_month") {
   const today = new Date()
   const month = today.getMonth()
@@ -444,10 +469,27 @@ else if (intentObj.intent === "recurring_base") {
     .from('seva_bookings')
     .select('*')
 
+  const now = new Date()
+  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
   const total = (data || []).reduce((sum, b) => {
-    if (b.donation_type === 'recurring') {
-      return sum + (Number(b.monthly_amount) || 0)
+    if (
+      b.donation_type === 'recurring' &&
+      b.donation_start_date &&
+      b.donation_end_date &&
+      b.monthly_amount
+    ) {
+      const start = new Date(b.donation_start_date)
+      const end = new Date(b.donation_end_date)
+
+      const startMonth = new Date(start.getFullYear(), start.getMonth(), 1)
+      const endMonth = new Date(end.getFullYear(), end.getMonth(), 1)
+
+      if (currentMonth >= startMonth && currentMonth <= endMonth) {
+        return sum + (Number(b.monthly_amount) || 0)
+      }
     }
+
     return sum
   }, 0)
 
@@ -537,11 +579,11 @@ else if (intentObj.intent === "top_recurring_donors") {
       amount: value
     }))
 
-  result = {
-    type: "list",
-    title: "Top Recurring Donors",
-    items
-  }
+result = {
+  type: "donor_list",
+  title: "Top Recurring Donors",
+  items
+}
 }
 
 else 
