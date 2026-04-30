@@ -523,6 +523,9 @@ const downloadReceipt = async (b: any) => {
                 {tab === 'monthly' && '📊 Monthly'}
                 {tab === 'revenue' && '📈 Revenue'}
               </button>
+
+    
+
             ))}
           </div>
 
@@ -546,6 +549,14 @@ const downloadReceipt = async (b: any) => {
               >
                 ➕ Booking
               </button>
+
+              {/* 🔥 ADD THIS HERE */}
+                <button
+                  onClick={() => window.open('/admin/revenue/projection', '_blank')}
+                  className="bg-orange-500 text-white px-4 py-2 rounded-xl"
+                >
+                  📊 Projection
+                </button>
 
               <button onClick={() => setShowChat(true)} className="bg-purple-500 text-white px-4 py-2 rounded-xl">
                 💬 Ask Ganesha
